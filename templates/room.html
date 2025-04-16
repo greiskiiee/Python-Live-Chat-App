@@ -1,37 +1,76 @@
 {% extends 'base.html' %} {% block content %}
-<div class="message-box">
-  <h2>Chat Room: {{code}}</h2>
-  <div class="messages" id="messages"></div>
-  <div class="inputs">
-    <input
-      type="text"
-      rows="3"
-      placeholder="Message"
-      name="message"
-      id="message"
-    />
-    <button type="button" name="send" id="send-btn" onClick="sendMessage()">
-      Send
-    </button>
+<div
+  style="
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  "
+>
+  <div
+    class="message-box"
+    style="background-color: #444444; padding: 20px; border-radius: 8px"
+  >
+    <h2 style="font-family: sans-serif; color: #fafafa">Chat Room: {{code}}</h2>
+    <div
+      class="messages"
+      id="messages"
+      style="color: #fafafa; max-height: 400px; overflow-y: auto"
+    ></div>
+    <div class="inputs" style="display: flex; gap: 10px; margin-top: 10px">
+      <input
+        type="text"
+        placeholder="Message"
+        name="message"
+        id="message"
+        style="
+          height: 26px;
+          padding: 1px 2px 1px 4px;
+          border-radius: 5px;
+          background-color: #fafafa;
+          flex: 1;
+        "
+      />
+      <button
+        type="button"
+        name="send"
+        id="send-btn"
+        onClick="sendMessage()"
+        style="
+          width: fit-content;
+          height: 32px;
+          background-color: #ff6565;
+          font-family: sans-serif;
+          color: #fafafa;
+          padding: 4px 12px;
+          border-radius: 4px;
+        "
+      >
+        Send
+      </button>
+    </div>
   </div>
 </div>
+
 <script type="text/javascript">
   var socketio = io();
-
   const messages = document.getElementById("messages");
+  const messageInput = document.getElementById("message");
 
   const createMessage = (name, msg) => {
     const content = `
-    <div class="text">
+      <div class="text">
         <span>
-            <strong>${name}</strong>: ${msg}
+          <strong>${name}</strong>: ${msg}
         </span>
-        <span class="muted">
-            ${new Date().toLocaleString()}
+        <span class="muted" style="margin-left: 10px; font-size: 0.8em;">
+          ${new Date().toLocaleString()}
         </span>
-    </div>
+      </div>
     `;
     messages.innerHTML += content;
+    messages.scrollTop = messages.scrollHeight;
   };
 
   socketio.on("message", (data) => {
@@ -39,14 +78,25 @@
   });
 
   const sendMessage = () => {
-    const message = document.getElementById("message");
-    if (message.value == "") return;
-    socketio.emit("message", { data: message.value });
-    message.value = "";
+    const message = messageInput.value.trim();
+    if (message === "") return;
+    socketio.emit("message", { data: message });
+    messageInput.value = "";
   };
+
+  messageInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
 </script>
+
 {% for msg in messages %}
 <script type="text/javascript">
-  createMessage("{{msg.name}}", "{{msg.message}}");
+  createMessage(
+    "{{ msg.name | replace('\\', '\\\\') | replace('', '\\') | replace('\n', '\\n') }}",
+    "{{ msg.message | replace('\\', '\\\\') | replace('', '\\') | replace('\n', '\\n') }}"
+  );
 </script>
 {% endfor %} {% endblock %}
